@@ -76,4 +76,3 @@ static void led_exit(void)
 module_init(led_init);
 module_exit(led_exit);
 MODULE_LICENSE("GPL");
-
