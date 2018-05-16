@@ -16,7 +16,10 @@ int main()
 
 	//能够写入的大小
 	int size = 0;
-
+	
+	//移动
+	int move;
+	
 	//驱动
 	int fd;
 
@@ -33,13 +36,11 @@ int main()
 	
 	char udata[26];  //定义用户缓冲区
 	memset(udata,0,sizeof(udata));
-	fd = open("/dev/myled",O_RDONLY|O_NDELAY);
-	//读取驱动信息
 
 
 	//打开设备
     	//open->....->调用led_open
-    	fd = open("/dev/myled", O_RDONLY|O_NDELAY);
+    	fd = open("f.txt", O_RDONLY|O_NDELAY);
 	
 	//打开存储文件偏移位置的文件
 	fd_file = open("prevfile.txt",O_RDWR|O_CREAT,0777);
@@ -50,18 +51,17 @@ int main()
 		perror("file open failure!");
 		exit(-1);
 	}
-	
-	/*获取当前指针偏移量
-	fseek(fp,move,SEEK_END);
-	len = ftell(fp)+1;
-	*/
+
 
 	//读取内核信息到缓存区
 	//read(fd,udata,sizeof(udata));
 	
 	//自定义缓存区
 	setvbuf(fp,buf,_IOFBF,sizeof(buf));
-
+	
+	read(fd_file,&move,sizeof(move));
+	fseek(fp,move,SEEK_SET);
+	
 	while(1)
 	{
 
