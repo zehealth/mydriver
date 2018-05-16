@@ -40,7 +40,7 @@ int main()
 
 	//打开设备
     	//open->....->调用led_open
-    	fd = open("f.txt", O_RDONLY|O_NDELAY);
+    	fd = open("/dev/myled", O_RDONLY|O_NDELAY);
 	
 	//打开存储文件偏移位置的文件
 	fd_file = open("prevfile.txt",O_RDWR|O_CREAT,0777);
