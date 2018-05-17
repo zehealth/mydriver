@@ -7,7 +7,7 @@
 #include <memory.h>
 #include <fcntl.h>
 
-#define FILESIZE 1025
+#define FILESIZE 2065
 
 int main()
 {
@@ -20,7 +20,7 @@ int main()
 	//驱动
 	int fd;
 
-	int move=0;
+	int move;
 
 	//存储文件
 	int fd_file;
@@ -52,12 +52,13 @@ int main()
 	}
 
 	//获取当前指针偏移量
-	lseek(fd_file,0,SEEK_SET);
+	//lseek(fd_file,0,SEEK_SET);
 	read(fd_file,&move,sizeof(move));
-	if(move!=0)
+	if(move!=0&&move<=FILESIZE)
 	{
-		fseek(fp,move,SEEK_SET);
+		fseek(fp,0,SEEK_SET);
 		len = ftell(fp)+move;
+		fseek(fp,len,SEEK_SET);
 		printf("%d\n",move);
 	}
 	else
@@ -65,6 +66,7 @@ int main()
 		fseek(fp,0,SEEK_SET);
 		len = ftell(fp)+1;
 	}
+	
 	//读取内核信息到缓存区
 	//read(fd,udata,sizeof(udata));
 	
@@ -74,133 +76,133 @@ int main()
 	while(1)
 	{
 		nmove = ftell(fp);
+		printf("%d\n",len);
+	if(nmove <= FILESIZE)
+	{
 
-		if(nmove <= FILESIZE)
-		{
+		if((sizeof(buf)-strlen(buf))==sizeof(udata))
+		{				
+		//	read(fd,udata,sizeof(udata));
+		//	fwrite(udata,sizeof(udata),1,fp);
 
-			if((sizeof(buf)-strlen(buf))==sizeof(udata))
-			{				
-			//	read(fd,udata,sizeof(udata));
-			//	fwrite(udata,sizeof(udata),1,fp);
-
-				if((FILESIZE-len) > sizeof(buf))
-				{
-					read(fd,udata,sizeof(udata));
-					fwrite(udata,sizeof(udata),1,fp);
-
-					fseek(fp,len,SEEK_SET);	
-					fwrite(buf,sizeof(buf),1,fp);		
-					len = ftell(fp) + sizeof(buf);
-					memset(buf,0,sizeof(buf));
-
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				else if((FILESIZE-len) < sizeof(udata))
-				{
-					read(fd,udata,sizeof(udata));
-					fwrite(udata,sizeof(udata),1,fp);
-
-					fseek(fp,len,SEEK_SET);
-					size = FILESIZE - len;
-					fwrite(buf,size,1,fp);
-					memset(buf,0,sizeof(buf));
-					fseek(fp,0,SEEK_SET);
-					len = ftell(fp) + 1;
-
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				else
-				{
-					read(fd,udata,sizeof(udata));
-					fwrite(udata,sizeof(udata),1,fp);
-
-					fseek(fp,len,SEEK_SET);
-					fwrite(buf,sizeof(buf),1,fp);
-					memset(buf,0,sizeof(buf));
-					fseek(fp,0,SEEK_SET);
-					len = ftell(fp) + 1;
-
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				memset(udata,0,sizeof(udata));
-
-			}
-
-			else if((sizeof(buf)-strlen(buf))<sizeof(udata))
+			if((FILESIZE-len) > sizeof(buf))
 			{
-				//读取内核信息到缓存区
-			//	read(fd,udata,sizeof(udata));
-			//	size = sizeof(buf)-strlen(buf);
-			//	fwrite(udata,size,1,fp);
-
-				if((FILESIZE-len) > sizeof(buf))
-				{
-					read(fd,udata,sizeof(udata));
-					size = sizeof(buf)-strlen(buf);
-					fwrite(udata,size,1,fp);
-
-					fseek(fp,len,SEEK_SET);	
-					fwrite(buf,sizeof(buf),1,fp);					
-					len = ftell(fp) + sizeof(buf);
-					memset(udata,0,sizeof(buf));
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				else if((FILESIZE-len) < sizeof(udata))
-				{	
-					read(fd,udata,sizeof(udata));
-					size = sizeof(buf)-strlen(buf);
-					fwrite(udata,size,1,fp);
-
-					fseek(fp,len,SEEK_SET);
-					size = FILESIZE - len;
-					fwrite(buf,size,1,fp);
-					memset(buf,0,sizeof(buf));
-					fseek(fp,0,SEEK_SET);
-					len = ftell(fp) + 1;
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				else
-				{
-					read(fd,udata,sizeof(udata));
-					size = sizeof(buf)-strlen(buf);
-					fwrite(udata,size,1,fp);
-
-					fseek(fp,len,SEEK_SET);
-					fwrite(buf,sizeof(buf),1,fp);
-					memset(buf,0,sizeof(buf));
-					fseek(fp,0,SEEK_SET);
-					len = ftell(fp) + 1;
-
-					lseek(fd,0,SEEK_SET);
-					write(fd_file,&len,sizeof(len));
-				}
-				memset(udata,0,sizeof(udata));
-			}
-
-			else if((sizeof(buf)-strlen(buf))>sizeof(udata))
-			{
-				//读取内核信息到缓存区
 				read(fd,udata,sizeof(udata));
 				fwrite(udata,sizeof(udata),1,fp);
 
-				memset(udata,0,sizeof(udata));
+				fseek(fp,len,SEEK_SET);	
+				fwrite(buf,sizeof(buf),1,fp);		
+				len = ftell(fp) + sizeof(buf);
+				memset(buf,0,sizeof(buf));
+
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
+			}
+			else if((FILESIZE-len) < sizeof(udata))
+			{
+				read(fd,udata,sizeof(udata));
+				fwrite(udata,sizeof(udata),1,fp);
+
+				fseek(fp,len,SEEK_SET);
+				size = FILESIZE - len;
+				fwrite(buf,size,1,fp);
+				memset(buf,0,sizeof(buf));
+				fseek(fp,0,SEEK_SET);
+				len = ftell(fp) + 1;
+
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
 			}
 			else
 			{
-			//	fseek(fp,0,SEEK_SET);	
+				read(fd,udata,sizeof(udata));
+				fwrite(udata,sizeof(udata),1,fp);
 
+				fseek(fp,len,SEEK_SET);
+				fwrite(buf,sizeof(buf),1,fp);
+				memset(buf,0,sizeof(buf));
+				fseek(fp,0,SEEK_SET);
+				len = ftell(fp) + 1;
+
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
 			}
+			memset(udata,0,sizeof(udata));
+
+		}
+
+		else if((sizeof(buf)-strlen(buf))<sizeof(udata))
+		{
+			//读取内核信息到缓存区
+		//	read(fd,udata,sizeof(udata));
+		//	size = sizeof(buf)-strlen(buf);
+		//	fwrite(udata,size,1,fp);
+
+			if((FILESIZE-len) > sizeof(buf))
+			{
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
+				fseek(fp,len,SEEK_SET);	
+				fwrite(buf,sizeof(buf),1,fp);					
+				len = ftell(fp) + sizeof(buf);
+				memset(udata,0,sizeof(buf));
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
+			}
+			else if((FILESIZE-len) < sizeof(udata))
+			{	
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
+				fseek(fp,len,SEEK_SET);
+				size = FILESIZE - len;
+				fwrite(buf,size,1,fp);
+				memset(buf,0,sizeof(buf));
+				fseek(fp,0,SEEK_SET);
+				len = ftell(fp) + 1;
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
+			}
+			else
+			{
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
+				fseek(fp,len,SEEK_SET);
+				fwrite(buf,sizeof(buf),1,fp);
+				memset(buf,0,sizeof(buf));
+				fseek(fp,0,SEEK_SET);
+				len = ftell(fp) + 1;
+
+				lseek(fd,0,SEEK_SET);
+				write(fd_file,&len,sizeof(len));
+			}
+			memset(udata,0,sizeof(udata));
+		}
+	
+		else if((sizeof(buf)-strlen(buf))>sizeof(udata))
+		{
+			//读取内核信息到缓存区
+			read(fd,udata,sizeof(udata));
+			fwrite(udata,sizeof(udata),1,fp);
+			
+			memset(udata,0,sizeof(udata));
 		}
 		else
 		{
-			fseek(fp,0,SEEK_SET);
-			len = 0;
+		//	fseek(fp,0,SEEK_SET);	
+		
 		}
+	}
+	else
+	{
+		fseek(fp,0,SEEK_SET);
+		len = 0;
+	}
 		
 	}	
 	
@@ -208,3 +210,4 @@ int main()
 	return 0;
 	
 }
+
