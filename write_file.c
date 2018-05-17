@@ -16,16 +16,15 @@ int main()
 
 	//能够写入的大小
 	int size = 0;
-	
-	//移动
-	int move;
-	
+
 	//驱动
 	int fd;
 
+	int move=0;
+
 	//存储文件
 	int fd_file;
-
+	int nmove;
 	//文件指针
     	FILE *fp;
 
@@ -52,75 +51,110 @@ int main()
 		exit(-1);
 	}
 
-
+	//获取当前指针偏移量
+	lseek(fd_file,0,SEEK_SET);
+	read(fd_file,&move,sizeof(move));
+	if(move!=0)
+	{
+		fseek(fp,move,SEEK_SET);
+		len = ftell(fp)+move;
+		printf("%d\n",move);
+	}
+	else
+	{
+		fseek(fp,0,SEEK_SET);
+		len = ftell(fp)+1;
+	}
 	//读取内核信息到缓存区
 	//read(fd,udata,sizeof(udata));
 	
 	//自定义缓存区
 	setvbuf(fp,buf,_IOFBF,sizeof(buf));
-	
-	read(fd_file,&move,sizeof(move));
-	fseek(fp,move,SEEK_SET);
-	
+
 	while(1)
+	{
+		nmove = ftell(fp);
+
+	if(nmove <= FILESIZE)
 	{
 
 		if((sizeof(buf)-strlen(buf))==sizeof(udata))
 		{				
-			read(fd,udata,sizeof(udata));
-			fwrite(udata,sizeof(udata),1,fp);
+		//	read(fd,udata,sizeof(udata));
+		//	fwrite(udata,sizeof(udata),1,fp);
 
 			if((FILESIZE-len) > sizeof(buf))
 			{
+				read(fd,udata,sizeof(udata));
+				fwrite(udata,sizeof(udata),1,fp);
+
 				fseek(fp,len,SEEK_SET);	
-				fwrite(buf,sizeof(buf),1,fp);					
+				fwrite(buf,sizeof(buf),1,fp);		
 				len = ftell(fp) + sizeof(buf);
-				memset(udata,0,sizeof(buf));
+				memset(buf,0,sizeof(buf));
+
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			else if((FILESIZE-len) < sizeof(udata))
 			{
+				read(fd,udata,sizeof(udata));
+				fwrite(udata,sizeof(udata),1,fp);
+
 				fseek(fp,len,SEEK_SET);
 				size = FILESIZE - len;
 				fwrite(buf,size,1,fp);
 				memset(buf,0,sizeof(buf));
 				fseek(fp,0,SEEK_SET);
 				len = ftell(fp) + 1;
+
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			else
 			{
+				read(fd,udata,sizeof(udata));
+				fwrite(udata,sizeof(udata),1,fp);
+
+				fseek(fp,len,SEEK_SET);
 				fwrite(buf,sizeof(buf),1,fp);
 				memset(buf,0,sizeof(buf));
 				fseek(fp,0,SEEK_SET);
-				len = ftell(fp) + 1;	
+				len = ftell(fp) + 1;
+
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			memset(udata,0,sizeof(udata));
 
 		}
 
-		if((sizeof(buf)-strlen(buf))<sizeof(udata))
+		else if((sizeof(buf)-strlen(buf))<sizeof(udata))
 		{
 			//读取内核信息到缓存区
-			read(fd,udata,sizeof(udata));
-			size = sizeof(buf)-strlen(buf);
-			fwrite(udata,size,1,fp);
+		//	read(fd,udata,sizeof(udata));
+		//	size = sizeof(buf)-strlen(buf);
+		//	fwrite(udata,size,1,fp);
 
 			if((FILESIZE-len) > sizeof(buf))
 			{
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
 				fseek(fp,len,SEEK_SET);	
 				fwrite(buf,sizeof(buf),1,fp);					
 				len = ftell(fp) + sizeof(buf);
 				memset(udata,0,sizeof(buf));
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			else if((FILESIZE-len) < sizeof(udata))
-			{
+			{	
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
 				fseek(fp,len,SEEK_SET);
 				size = FILESIZE - len;
 				fwrite(buf,size,1,fp);
@@ -128,21 +162,27 @@ int main()
 				fseek(fp,0,SEEK_SET);
 				len = ftell(fp) + 1;
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			else
 			{
+				read(fd,udata,sizeof(udata));
+				size = sizeof(buf)-strlen(buf);
+				fwrite(udata,size,1,fp);
+
+				fseek(fp,len,SEEK_SET);
 				fwrite(buf,sizeof(buf),1,fp);
 				memset(buf,0,sizeof(buf));
 				fseek(fp,0,SEEK_SET);
-				len = ftell(fp) + 1;	
+				len = ftell(fp) + 1;
+
 				lseek(fd,0,SEEK_SET);
-				write(fd,&len,sizeof(len));
+				write(fd_file,&len,sizeof(len));
 			}
 			memset(udata,0,sizeof(udata));
 		}
 	
-		if((sizeof(buf)-strlen(buf))>sizeof(udata))
+		else if((sizeof(buf)-strlen(buf))>sizeof(udata))
 		{
 			//读取内核信息到缓存区
 			read(fd,udata,sizeof(udata));
@@ -150,12 +190,21 @@ int main()
 			
 			memset(udata,0,sizeof(udata));
 		}
-
+		else
+		{
+		//	fseek(fp,0,SEEK_SET);	
+		
+		}
+	}
+	else
+	{
+		fseek(fp,0,SEEK_SET);
+		len = 0;
+	}
+		
 	}	
 	
 	fclose(fp);
 	return 0;
 	
 }
-
-
