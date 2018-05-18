@@ -7,7 +7,7 @@
 #include <memory.h>
 #include <fcntl.h>
 
-#define FILESIZE 1048574 
+#define FILESIZE 20650 
 
 int main()
 {
@@ -125,3 +125,4 @@ int main()
 	close(fd_dev);
 	close(fd_move);
 }
+
