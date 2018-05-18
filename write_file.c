@@ -72,7 +72,10 @@ int main()
 			{
 				{
 					sy_space = sizeof(buf)-strlen(buf);
-					
+					for(j=0;j<sy_space;j++)
+					{
+						sy_buf[j] = dev_data[j];
+					}
 					sprintf(buf,"%s%c%s",buf,i,sy_buf);
 					i++;
 					memset(dev_data,0,sizeof(dev_data));
