@@ -3,12 +3,16 @@
 #include <linux/fs.h> //struct file_operations
 #include <linux/cdev.h> //struct cdev + 设备号
 #include <linux/uaccess.h> //copy_to_user
+//#include <linux/stdio.h>
+#include <linux/memory.h>
 
 //定义设备号
 static dev_t dev;
 
 //定义字符设备对象
 static struct cdev led_cdev;
+
+static char j = '0';
 
 //调用关系：应用程序open->....->led_open
 static int led_open(struct inode *inode, struct file *file)
@@ -31,12 +35,22 @@ static ssize_t led_read(struct file *file,
                         loff_t *ppos)
 {
     //定义初始化内核缓冲区(存储空间再后1G虚拟内存中)
-    char kdata[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
+    char data[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	char kdata[27];
+	int i;
+	memset(kdata,0,sizeof(kdata));
     //将内核数据上报给用户
     //切记：buf虽然保存的用户缓冲区的首地址，但不能直接访问
     //*(int *)buf = kdata;错误
-    copy_to_user(buf, kdata, sizeof(kdata));
+ 	if(j>'9')
+	{
+		j = '0';
+	}
+    	sprintf(kdata,"%c%s",j++,data);
+    	copy_to_user(buf, kdata, sizeof(kdata));   	
+    	memset(kdata,0,sizeof(kdata));
+    
+	
     printk("%s\n", __func__);
     return sizeof(kdata); //失败返回负值，成功返回实际读取的字节数
 }
