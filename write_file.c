@@ -7,21 +7,30 @@
 #include <memory.h>
 #include <fcntl.h>
 
-#define FILESIZE 20650 
+#define FILESIZE 966
+#define BUFSIZE  100
+#define DEVSIZE  27
+#define SYSIZE   26
 
 int main()
 {
 	int fd,fd_move,fd_dev;	
 	int buf_size;	
 	int move = 0;	
-	int j;	
+	int j,z;	
 	static int len = 0;
 	int sy_size = 0; 
 	int sy_space;
 	int flag;
 	
-	char sy_buf[26];
-	char i = '0';
+	char sy_buf[SYSIZE];
+	char buf[BUFSIZE];
+	char dev_data[DEVSIZE];
+
+	memset(sy_buf,0,sizeof(sy_buf));
+	memset(buf,0,sizeof(buf));
+	memset(dev_data,0,sizeof(dev_data));
+
 	fd = open("write_file.txt",O_RDWR|O_CREAT,0777);
 		
 	fd_move = open("move.txt",O_RDWR|O_CREAT,0777);	
@@ -31,38 +40,23 @@ int main()
 	{
 		printf("open dev failure!\n");
 			
-	}
-	
-	char buf[100];	
-	char dev_data[27];
-	
-	memset(buf,0,sizeof(buf));	
-	memset(dev_data,0,sizeof(dev_data));
-	memset(sy_buf,0,sizeof(sy_buf));
-	
-	read(fd_move,&move,sizeof(move));
-	
+	}	
 
 	while(1)
-	{
-		read(fd_dev,dev_data,sizeof(dev_data));
-		printf("%s\n",dev_data);	
+	{				
 		//判断缓冲区大小
-		if(strlen(buf)<100)
+		while(strlen(buf) < BUFSIZE)
 		{
-			if(i>'9')
-			{
-				i = '0';
-
-			}
-
 			flag = 0;
+			
+			read(fd_dev,dev_data,sizeof(dev_data));
+			
 			//剩余空间能否放下读取的数组
 			if((sizeof(buf)-strlen(buf))>=sizeof(dev_data))
 			{
-				sprintf(buf,"%s%c%s",buf,i,dev_data);	
-				i++;
+				sprintf(buf,"%s%s",buf,dev_data);	
 				memset(dev_data,0,sizeof(dev_data));
+
 				if(sizeof(buf)==strlen(buf))
 				{
 					flag=1;
@@ -70,57 +64,78 @@ int main()
 			}
 			else
 			{
+				sy_space = sizeof(buf)-strlen(buf);
+	
+				for(j=0;j<sy_space;j++)
 				{
-					sy_space = sizeof(buf)-strlen(buf);
-					for(j=0;j<sy_space;j++)
-					{
-						sy_buf[j] = dev_data[j];
-					}
-					sprintf(buf,"%s%c%s",buf,i,sy_buf);
-					i++;
-					memset(dev_data,0,sizeof(dev_data));
-					flag = 1;
+					sy_buf[j] = dev_data[j];
 				}
-				
+	
+				sprintf(buf,"%s%s",buf,sy_buf);
+				memset(sy_buf,0,sizeof(sy_buf));
+
+				for(z=0;j<26;j++,z++)
+				{
+					sy_buf[z] = dev_data[j];
+					
+				}
+
+				memset(dev_data,0,sizeof(dev_data));
+				flag = 1;				
 			}
 		}
 		
-		if(flag =1)
+		if(flag == 1)
 		{
-			if(move>0&&move<FILESIZE)
+			flag = 0;
+
+			lseek(fd_move,0,SEEK_SET);
+			read(fd_move,&move,sizeof(move));	
+
+			if(move < FILESIZE)
 			{
 				len = move;			
 			}
-			
-			if(len>=FILESIZE)
+			else
 			{
 				len =0;
 			}
+			
+			if((FILESIZE-len) >= sizeof(buf))
+			{
+				lseek(fd,len,SEEK_SET);
+				write(fd,buf,sizeof(buf));
+				memset(buf,0,sizeof(buf));
+				len += sizeof(buf);
+
+				lseek(fd_move,0,SEEK_SET);
+				write(fd_move,&len,sizeof(len));
+			}
 			else
 			{
-				if((FILESIZE-len) >= sizeof(buf))
-				{
-					lseek(fd,len,SEEK_SET);
-					write(fd,buf,sizeof(buf));
-					memset(buf,0,sizeof(buf));
-					len += sizeof(buf);
-					
-					lseek(fd_move,0,SEEK_SET);
-					write(fd_move,&len,sizeof(len));
-				}
-				else
-				{
-					lseek(fd,len,SEEK_SET);
-					write(fd,buf,(FILESIZE-len));
-					memset(buf,0,sizeof(buf));
-					len =0; 
-					
-					lseek(fd_move,0,SEEK_SET);
-					write(fd_move,&len,sizeof(len));
-				}
-				
+				lseek(fd,len,SEEK_SET);
+				write(fd,buf,(FILESIZE-len));
+				len = 0;
+				lseek(fd,len,SEEK_SET);
+				write(fd,&(buf[FILESIZE-len]),BUFSIZE-(FILESIZE-len));
+				memset(buf,0,sizeof(buf));
+				len = BUFSIZE - (FILESIZE-len);
+
+				lseek(fd_move,0,SEEK_SET);
+				write(fd_move,&len,sizeof(len));
+			}	
+			
+			if(strlen(sy_buf)>0)
+			{
+				sprintf(buf,"%s%s",buf,sy_buf);
+				//printf("%s\n",sy_buf);
+				memset(sy_buf,0,sizeof(sy_buf));
 			}
-					
+			else
+			{
+				memset(sy_buf,0,sizeof(sy_buf));
+			}
+						
 		}		
 	}
 	
@@ -128,4 +143,3 @@ int main()
 	close(fd_dev);
 	close(fd_move);
 }
-
